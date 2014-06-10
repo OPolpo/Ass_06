@@ -29,7 +29,7 @@ WindowFramework *window;
 AsyncTaskManager *task_mgr = AsyncTaskManager::get_global_ptr();
 PT(ClockObject) globalClock = ClockObject::get_global_clock();
 NodePath camera;
-NodePath table, rolling_pin, lunch_box, astronaut, sky;
+NodePath table, rolling_pin, lunch_box, astronaut, sky, girl;
 PT(AudioManager) AM;
 PT(AudioSound) mySound;
 
@@ -64,6 +64,11 @@ double lunch_box_pos_x = -3;
 double lunch_box_pos_y = 0;
 double lunch_box_pos_z = 3.5;
 
+double sexy_girl_length = 2;
+double sexy_girl_pos_x = 3;
+double sexy_girl_pos_y = 0;
+double sexy_girl_pos_z = 2.5;
+
 // ##############################################
 
 
@@ -75,6 +80,7 @@ void init_table();
 void init_floor();
 void init_ball();
 void init_sky();
+void init_sexy_girl();
 void KeyboardHandler(const Event *eventPtr, void *dataPtr);
 void inputBinding();
 void init_light();
@@ -241,6 +247,7 @@ int main(int argc, char *argv[]) {
 	init_table();
 	init_rolling_pin();
 	init_lunch_box();
+	init_sexy_girl();
 
     PT(GenericAsyncTask) task;
     task = new GenericAsyncTask("Scene update" , &update_scene , (void *) NULL );
@@ -336,28 +343,28 @@ void init_rolling_pin(){
 
 void init_sexy_girl(){
 	
-	BulletCylinderShape *shape1 = new BulletCylinderShape(0.1*rolling_pin_length,rolling_pin_length);
-	BulletRigidBodyNode* rolling_pin_rigid_node = new BulletRigidBodyNode("Box");
+	BulletBoxShape *shape1 = new BulletBoxShape(LVecBase3f(sexy_girl_length*0.25,sexy_girl_length*0.20,sexy_girl_length*0.5));
+	BulletRigidBodyNode* sexy_girl_rigid_node = new BulletRigidBodyNode("Box");
 
-	rolling_pin_rigid_node->set_mass(0.3);
+	sexy_girl_rigid_node->set_mass(0.3);
 
-	rolling_pin_rigid_node->add_shape(shape1, TransformState::make_pos(LPoint3f(0.0,0.0,0.0)));
+	sexy_girl_rigid_node->add_shape(shape1, TransformState::make_pos(LPoint3f(0.0,0.0,0.0)));
 
 
-	physics_world->attach_rigid_body(rolling_pin_rigid_node);
+	physics_world->attach_rigid_body(sexy_girl_rigid_node);
  
-	rolling_pin = window->get_render().attach_new_node(rolling_pin_rigid_node);
-	rolling_pin.set_pos_hpr(rolling_pin_pos_x, rolling_pin_pos_y , rolling_pin_length + rolling_pin_pos_z, 45, 90, 0);
+	girl = window->get_render().attach_new_node(sexy_girl_rigid_node);
+	girl.set_pos_hpr(sexy_girl_pos_x, sexy_girl_pos_y , sexy_girl_length + sexy_girl_pos_z, 45, 90, 0);
 
-	NodePath rolling_pin_model = window->load_model(framework.get_models(),"models/sexy_girl/sexy_girl");
-	rolling_pin_model.reparent_to(window->get_render());
-	rolling_pin_model.set_scale(rolling_pin_length);
-	rolling_pin_model.set_pos(0, 0, 0);
-	rolling_pin_model.set_hpr(0, 0, 90);
+	NodePath sexy_girl_model = window->load_model(framework.get_models(),"models/sexy_girl/sexy_girl");
+	sexy_girl_model.reparent_to(window->get_render());
+	sexy_girl_model.set_scale(rolling_pin_length);
+	sexy_girl_model.set_pos(0, 0, 0);
+	sexy_girl_model.set_hpr(0, 0, 90);
 
-	rolling_pin_model.reparent_to(rolling_pin);
-	rolling_pin_rigid_node->set_friction(0.6);
-	rolling_pin_rigid_node->set_anisotropic_friction(0.8);
+	sexy_girl_model.reparent_to(girl);
+	sexy_girl_rigid_node->set_friction(0.6);
+	sexy_girl_rigid_node->set_anisotropic_friction(0.8);
 	
 }
 
