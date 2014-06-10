@@ -32,7 +32,7 @@ WindowFramework *window;
 AsyncTaskManager *task_mgr = AsyncTaskManager::get_global_ptr();
 PT(ClockObject) globalClock = ClockObject::get_global_clock();
 NodePath camera;
-NodePath table, rolling_pin, lunch_box, astronaut, sky, girl;
+NodePath table, rolling_pin, lunch_box, astronaut, sky, sexy_girl_model;
 PT(AudioManager) AM;
 PT(AudioSound) mySound;
 
@@ -50,7 +50,9 @@ TexturePool *texture_pool = TexturePool::get_global_ptr();
  * ##############################################
  **/
 
-double speed = 2;
+double speed = 1;
+double pos_x = -1;
+int done=1;
 
 double astronaut_height = 1;
 double astronaut_pos_x = 0;
@@ -70,8 +72,8 @@ double lunch_box_pos_y = 0;
 double lunch_box_pos_z = 3.5;
 
 double girl_height = 0.7;
-double sexy_girl_pos_x = 0;
-double sexy_girl_pos_y = -7;
+double sexy_girl_pos_x = -20;
+double sexy_girl_pos_y = -12;
 double sexy_girl_pos_z = 0;
 
 // ##############################################
@@ -113,16 +115,18 @@ AsyncTask::DoneStatus update_scene(GenericAsyncTask* task, void* data){
 void KeyboardHandler(const Event *eventPtr, void *dataPtr)
 {
     if(eventPtr->get_name() == "arrow_up")
-		camera.set_hpr(camera.get_hpr()[0], camera.get_hpr()[1]+0.30, camera.get_hpr()[2]);
+		speed-=0.1;
+		//camera.set_hpr(camera.get_hpr()[0], camera.get_hpr()[1]+0.30, camera.get_hpr()[2]);
 
     if(eventPtr->get_name() == "arrow_down")
-		camera.set_hpr(camera.get_hpr()[0], camera.get_hpr()[1]-0.30, camera.get_hpr()[2]);
+		speed+=0.1;
+		//camera.set_hpr(camera.get_hpr()[0], camera.get_hpr()[1]-0.30, camera.get_hpr()[2]);
 
     if(eventPtr->get_name() == "arrow_left")
-		camera.set_hpr(camera.get_hpr()[0]+0.30, camera.get_hpr()[1], camera.get_hpr()[2]);
+		sexy_girl_model.set_hpr(sexy_girl_model.get_hpr()[0]+2.00, sexy_girl_model.get_hpr()[1], sexy_girl_model.get_hpr()[2]);
 
 	if(eventPtr->get_name() == "arrow_right")
-		camera.set_hpr(camera.get_hpr()[0]-0.30, camera.get_hpr()[1], camera.get_hpr()[2]);
+		sexy_girl_model.set_hpr(sexy_girl_model.get_hpr()[0]-2.00, sexy_girl_model.get_hpr()[1], sexy_girl_model.get_hpr()[2]);
 
     if(eventPtr->get_name() == "w")
 		camera.set_pos(camera.get_pos()[0], camera.get_pos()[1]+0.15, camera.get_pos()[2]);
@@ -137,7 +141,7 @@ void KeyboardHandler(const Event *eventPtr, void *dataPtr)
 		camera.set_pos(camera.get_pos()[0]+0.15, camera.get_pos()[1], camera.get_pos()[2]);
 
 	if(eventPtr->get_name() == "space"){
-		animationControl.play("Cube");
+		animationControl.play("Cube.1");
 		//animationControl.play("Cube.1");
 		mySound->play();
 		init_ball();
@@ -210,7 +214,7 @@ void init_light(){
 	s_light->set_color(LVecBase4f(1.0, 1.0, 1.0, 1));
 	NodePath slnp = window->get_render().attach_new_node(s_light);
 	slnp.set_pos(5, -5, 10);
-	window->get_render().set_light(slnp);https://github.com/OPolpo/Ass_06
+	window->get_render().set_light(slnp);
 
 	PT(PointLight) s_light_2;
 	s_light_2 = new PointLight("my s_light");
@@ -226,6 +230,30 @@ void init_light(){
 	window->get_render().set_light(alnp);
 }
 
+AsyncTask::DoneStatus spinCameraTask(GenericAsyncTask* task, void* data)
+{
+	double time;
+	// Calculate the new position and orientation (inefficient)
+	time = globalClock->get_real_time();
+	if(pos_x<0){		
+		pos_x = time * 4.0 + sexy_girl_pos_x;
+		cout << pos_x << endl;
+ 	}
+	else if (done){
+			animationControl.stop("Cube");
+			sexy_girl_model.set_hpr(180, 0, 00);
+			window->load_model(sexy_girl_model, "./models/sexy_girl/launch.egg");
+			auto_bind(sexy_girl_model.node(), animationControl, 0);
+			//animationControl.loop("Cube.1", true);
+			//animationControl.stop("Cube");
+			done = 0;
+		}
+	sexy_girl_model.set_pos(pos_x, sexy_girl_pos_y, sexy_girl_model.get_pos()[2]);
+	
+	// Tell the task manager to continue this task the next frame.
+	return AsyncTask::DS_cont;
+}
+
 int main(int argc, char *argv[]) {
 	camera.get_child(0).set_pos(LVecBase3(0.0,-3.0,0.0));
 	AM = AudioManager::create_AudioManager();
@@ -239,8 +267,8 @@ int main(int argc, char *argv[]) {
     window = framework.open_window();
 
     camera = window->get_camera_group();
-	camera.set_pos(-0,-30, 6);
-	camera.set_hpr(-0, -0, 0);
+	camera.set_pos(-0,-50, 15);
+	camera.set_hpr(-0, -15, 0);
  
     physics_world = new BulletWorld () ;
     physics_world->set_gravity(0 , 0 , -9.8) ;
@@ -258,6 +286,7 @@ int main(int argc, char *argv[]) {
 
     PT(GenericAsyncTask) task;
     task = new GenericAsyncTask("Scene update" , &update_scene , (void *) NULL );
+  	task_mgr->add(new GenericAsyncTask("Spins the camera", &spinCameraTask, (void*)NULL));
     task_mgr->add(task);
 
 	init_light();
@@ -350,17 +379,17 @@ void init_rolling_pin(){
 
 void init_sexy_girl(){
 
-	NodePath sexy_girl_model = window->load_model(framework.get_models(),"models/sexy_girl/sexy_girl");
+	sexy_girl_model = window->load_model(framework.get_models(),"models/sexy_girl/sexy_girl");
 	sexy_girl_model.reparent_to(window->get_render());
 	sexy_girl_model.set_scale(0.5*girl_height);
 	sexy_girl_model.set_pos(sexy_girl_pos_x, sexy_girl_pos_y, 7*girl_height + sexy_girl_pos_z);
-	sexy_girl_model.set_hpr(180, 0, 00);
+	sexy_girl_model.set_hpr(90, 0, 00);
 
-	window->load_model(sexy_girl_model, "./models/sexy_girl/launch.egg");
-	//window->load_model(sexy_girl_model, "./models/sexy_girl/walk.egg");
+	//window->load_model(sexy_girl_model, "./models/sexy_girl/launch.egg");
+	window->load_model(sexy_girl_model, "./models/sexy_girl/walk.egg");
     auto_bind(sexy_girl_model.node(), animationControl, 0);
     animationControl.loop("Cube", true);
-	animationControl.stop("Cube");
+	//animationControl.stop("Cube");
 
 	
 }
@@ -530,16 +559,16 @@ void init_ball(){
 	physics_world->attach_rigid_body(sphere_rigid_node);
 		
 	NodePath np_sphere = window->get_render().attach_new_node(sphere_rigid_node);
-	np_sphere.set_pos(camera.get_pos()[0], camera.get_pos()[1], camera.get_pos()[2]);
-	np_sphere.set_hpr(camera.get_hpr()[0], -camera.get_hpr()[1], camera.get_hpr()[2]);
+	np_sphere.set_pos(sexy_girl_model.get_pos()[0], sexy_girl_model.get_pos()[1], sexy_girl_model.get_pos()[2]);
+	np_sphere.set_hpr(sexy_girl_model.get_hpr()[0], -sexy_girl_model.get_hpr()[1], sexy_girl_model.get_hpr()[2]);
 
 
 	NodePath np_sphere_model = window->load_model(framework.get_models(), "models/baseball/baseball");
 	np_sphere_model.reparent_to(np_sphere);
 	np_sphere_model.set_scale(radius*7);
 	
-	LVector3 vector_direction = camera.get_relative_vector(window->get_render(), camera.get_pos());
-  	LVector3 bullet_direction = speed*LVector3(vector_direction[0], -vector_direction[1], vector_direction[2]);
+	LVector3 vector_direction = sexy_girl_model.get_relative_vector(window->get_render(), sexy_girl_model.get_pos());
+  	LVector3 bullet_direction = speed*LVector3(-vector_direction[0],vector_direction[1], 0);
 	cout << bullet_direction << endl;
 	sphere_rigid_node->set_linear_velocity(bullet_direction);
 	sphere_rigid_node->set_angular_velocity(ang_speed);
